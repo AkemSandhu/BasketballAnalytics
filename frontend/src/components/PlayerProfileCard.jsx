@@ -2,6 +2,7 @@ import PlayerLineChart from './PlayerLineChart'
 import PlayerRadarChart from './PlayerRadarChart'
 import PlayerShotChart from './PlayerShotChart'
 import SimilarSeasonsList from './SimilarSeasonsList'
+import PlayerBadges from './PlayerBadges'
 
 const PlayerProfileCard = ({ playerData, allData, globalTab }) => {
   const seasonData = allData.filter(d => d.season === playerData.season)
@@ -38,30 +39,6 @@ const PlayerProfileCard = ({ playerData, allData, globalTab }) => {
       'C': '#8b5cf6'
     }
     return colors[pos] || '#6b7280'
-  }
-
-  const badgeColors = {
-    'Diamond': 'bg-purple-600 text-white',
-    'Gold': 'bg-yellow-500 text-black',
-    'Silver': 'bg-gray-400 text-black',
-    'Bronze': 'bg-amber-700 text-white',
-  }
-
-  const renderBadges = () => {
-    const badges = playerData.badges
-    if (!badges || typeof badges !== 'object' || Object.keys(badges).length === 0) {
-      return <p className="text-textSecondary text-center py-8">No badge data available for this season.</p>
-    }
-    const entries = Object.entries(badges)
-    return (
-      <div className="max-h-64 overflow-y-auto grid grid-cols-2 gap-2 p-1">
-        {entries.map(([name, tier]) => (
-          <div key={name} className={`px-3 py-2 rounded-lg text-xs font-semibold text-center ${badgeColors[tier] || 'bg-surfaceLight text-textSecondary'}`}>
-            {name}
-          </div>
-        ))}
-      </div>
-    )
   }
 
   return (
@@ -135,7 +112,7 @@ const PlayerProfileCard = ({ playerData, allData, globalTab }) => {
       {globalTab === 2 && (
         <div>
           <p className="text-textSecondary text-sm mb-3">Skill badges for this season</p>
-          {renderBadges()}
+          <PlayerBadges badges={playerData.badges} />
         </div>
       )}
 
