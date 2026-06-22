@@ -25,4 +25,18 @@
   .btn-primary {
     @apply bg-primary hover:bg-primaryDark text-white font-semibold py-2 px-4 rounded-lg transition-colors;
   }
+  .filter-panel-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #2b6ef0 #14141c;
+  }
+  .filter-panel-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  .filter-panel-scroll::-webkit-scrollbar-track {
+    background: #14141c;
+  }
+  .filter-panel-scroll::-webkit-scrollbar-thumb {
+    background: #2b6ef0;
+    border-radius: 2px;
+  }
 }
