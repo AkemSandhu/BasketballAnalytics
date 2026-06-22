@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from common import crud, schemas
+from common import crud, schemas, models
 from app.dependencies import get_db
 
 router = APIRouter(prefix="/players", tags=["players"])
@@ -15,8 +15,8 @@ def get_players(
 ):
     if search:
         # Simple search by normalized_name (case‑insensitive)
-        players = db.query(common.models.Player).filter(
-            common.models.Player.normalized_name.ilike(f"%{search}%")
+        players = db.query(models.Player).filter(
+            models.Player.normalized_name.ilike(f"%{search}%")
         ).offset(skip).limit(limit).all()
         return players
     return crud.get_players(db, skip=skip, limit=limit)

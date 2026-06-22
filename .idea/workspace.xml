@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="f2ededc1-fb9b-4995-862f-a75e5fa821ae" name="Changes" comment="first">
-      <change afterPath="$PROJECT_DIR$/frontend/src/components/FilterPanel.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/components/GroupHeader.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/components/PlayerBadges.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/components/PlayerLineChart.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/components/PlayerProfileCard.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/components/PlayerProfileViewer.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/components/PlayerRadarChart.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/components/PlayerShotChart.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/components/SimilarSeasonsList.jsx" afterDir="false" />
+    <list default="true" id="f2ededc1-fb9b-4995-862f-a75e5fa821ae" name="Changes" comment="kinda almost">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/routers/players.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/routers/players.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/app/routers/seasons.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/routers/seasons.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/common/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/common/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/common/schemas.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/App.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/api/client.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/api/client.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/index.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/pages/Leaderboard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/Leaderboard.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/vite.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/vite.config.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/GroupHeader.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/PlayerProfileViewer.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/RadarChart.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/ShootingChart.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/SimilarPlayers.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/PlayerProfile.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/src/impact_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/src/impact_model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/src/pipeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/src/pipeline.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline/src/similarity.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline/src/similarity.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,6 +62,7 @@
   &quot;keyToString&quot;: {
     &quot;FastAPI.FastAPIProject.executor&quot;: &quot;Run&quot;,
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.run_pipeline.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
@@ -127,7 +129,7 @@
       <workItem from="1781400346869" duration="57000" />
       <workItem from="1781796662774" duration="5729000" />
       <workItem from="1781824670420" duration="10583000" />
-      <workItem from="1782095336491" duration="5055000" />
+      <workItem from="1782095336491" duration="7217000" />
     </task>
     <task id="LOCAL-00001" summary="first">
       <option name="closed" value="true" />
@@ -137,7 +139,23 @@
       <option name="project" value="LOCAL" />
       <updated>1781271914325</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="kinda almost">
+      <option name="closed" value="true" />
+      <created>1782101279386</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1782101279386</updated>
+    </task>
+    <task id="LOCAL-00003" summary="kinda almost">
+      <option name="closed" value="true" />
+      <created>1782101462748</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1782101462748</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -156,9 +174,11 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="first" />
-    <option name="LAST_COMMIT_MESSAGE" value="first" />
+    <MESSAGE value="kinda almost" />
+    <option name="LAST_COMMIT_MESSAGE" value="kinda almost" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/FastAPIProject$FastAPIProject.coverage" NAME="FastAPIProject Coverage Results" MODIFIED="1780933092972" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/BasketballAnalytics$run_pipeline.coverage" NAME="run_pipeline Coverage Results" MODIFIED="1782103098870" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pipeline/scripts" />
   </component>
 </project>

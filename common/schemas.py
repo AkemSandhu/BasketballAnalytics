@@ -35,13 +35,6 @@ class PlayerSeasonBase(BaseModel):
     age: Optional[int] = None
     g: Optional[int] = None
     mp: Optional[int] = None
-    pts: Optional[float] = None
-    trb: Optional[float] = None
-    ast: Optional[float] = None
-    stl: Optional[float] = None
-    blk: Optional[float] = None
-    tov: Optional[float] = None
-    pf: Optional[float] = None
     impact_score: Optional[float] = None
     talent_score: Optional[float] = None
     team_fit: Optional[float] = None

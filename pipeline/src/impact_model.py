@@ -35,12 +35,15 @@ def build_composite_target(df):
     return composite
 
 def remove_team_bias(df, target_col):
-    adjusted = []
-    for idx, row in df.iterrows():
-        team_mask = (df["Team"] == row["Team"]) & (df["season"] == row["season"]) & (df.index != idx)
-        team_avg = df.loc[team_mask, target_col].mean() if team_mask.any() else 0
-        adjusted.append(row[target_col] - team_avg)
-    return np.array(adjusted)
+    """
+    Subtract the team‑average of target_col (per season) from each player,
+    excluding the player themselves (leave‑one‑out). Vectorised using groupby.
+    """
+    # Team average = (sum(team) - self) / (count - 1)
+    team_sum = df.groupby(['Team', 'season'])[target_col].transform('sum')
+    team_count = df.groupby(['Team', 'season'])[target_col].transform('count')
+    adjusted = df[target_col] - (team_sum - df[target_col]) / (team_count - 1)
+    return adjusted.values
 
 def select_features(X, y, k=40):
     selector = SelectKBest(mutual_info_regression, k=min(k, X.shape[1]))
@@ -48,7 +51,6 @@ def select_features(X, y, k=40):
     return X_sel, selector.get_support()
 
 def train_impact_model(df, feature_cols, target_col):
-    # No imputation needed – rows with NaNs were already dropped
     model_df = df.dropna(subset=[target_col] + feature_cols).copy()
     X_raw = model_df[feature_cols].values
     y = model_df[target_col].values
@@ -58,7 +60,6 @@ def train_impact_model(df, feature_cols, target_col):
     selected_features = [feature_cols[i] for i in range(len(feature_cols)) if mask[i]]
     print(f"Selected {len(selected_features)} features.")
 
-    # Base learners (same as original)
     xgb_model = xgb.XGBRegressor(objective='reg:squarederror', random_state=42, n_jobs=-1)
     ridge = BayesianRidge(max_iter=300, tol=1e-3, alpha_1=1e-6, lambda_1=1e-6)
     elastic = ElasticNetCV(l1_ratio=[.1, .5, .7, .9, .95, .99, 1], cv=5, random_state=42)
@@ -97,7 +98,6 @@ def train_impact_model(df, feature_cols, target_col):
     return stack, scaler, mask, feature_cols
 
 def predict_impact(df, model, scaler, mask, feature_cols):
-    # No imputation – all rows are already complete (any missing rows were dropped)
     X_all = df[feature_cols].values
     X_scaled = scaler.transform(X_all)
     X_sel = X_scaled[:, mask]

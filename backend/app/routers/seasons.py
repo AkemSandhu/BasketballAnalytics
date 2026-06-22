@@ -7,28 +7,26 @@ from app.dependencies import get_db
 router = APIRouter(prefix="/seasons", tags=["seasons"])
 
 
-# =========================================================================
-# STATIC ROUTES – must come before any route with path parameter
-# =========================================================================
-
 @router.get("/all")
 def get_all_player_seasons(
-        limit: int = Query(500, ge=1, le=5000),
-        offset: int = Query(0, ge=0),
-        db: Session = Depends(get_db)
+    limit: int = Query(500, ge=1, le=5000),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db)
 ):
-    """Get all player‑seasons across all seasons (no season filter)."""
-    query = db.query(models.PlayerSeason).join(models.Season).join(models.Player)
+    """
+    Get all player‑seasons across all seasons.
+    Player and Season data are automatically loaded via relationships.
+    """
+    query = db.query(models.PlayerSeason)
     total = query.count()
     items = query.offset(offset).limit(limit).all()
+
     result = []
     for ps in items:
-        player = crud.get_player(db, ps.player_id)
-        season = crud.get_season(db, ps.season_id)
         result.append({
             # Core info
-            "player_name": player.display_name if player else "Unknown",
-            "season": season.year if season else None,
+            "player_name": ps.player.display_name if ps.player else "Unknown",
+            "season": ps.season.year if ps.season else None,
             "team": ps.team,
             "pos": ps.pos,
             "age": ps.age,
@@ -106,30 +104,32 @@ def get_all_player_seasons(
             "badges": ps.badges,
             "similar_seasons": ps.similar_seasons,
         })
+
     return {"total": total, "items": result}
 
 
 @router.get("/{season_id}/player-seasons")
 def get_player_seasons_by_season(
-        season_id: int,
-        limit: int = Query(100, ge=1, le=500),
-        offset: int = Query(0, ge=0),
-        db: Session = Depends(get_db)
+    season_id: int,
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db)
 ):
     """Get all player‑seasons for a specific season."""
     season = crud.get_season(db, season_id)
     if not season:
         raise HTTPException(status_code=404, detail="Season not found")
+
     query = db.query(models.PlayerSeason).filter(models.PlayerSeason.season_id == season_id)
     total = query.count()
     items = query.offset(offset).limit(limit).all()
+
     result = []
     for ps in items:
-        player = crud.get_player(db, ps.player_id)
         result.append({
             "id": ps.id,
             "player_id": ps.player_id,
-            "player_name": player.display_name if player else "Unknown",
+            "player_name": ps.player.display_name if ps.player else "Unknown",
             "season": season.year,
             "team": ps.team,
             "pos": ps.pos,
@@ -153,44 +153,42 @@ def get_player_seasons_by_season(
             "ts_pct": ps.ts_pct,
             "per": ps.per,
         })
+
     return {"total": total, "items": result}
 
 
 @router.get("/{season_id}/leaders")
 def get_leaderboard(
-        season_id: int,
-        stat: str = Query("impact_score", pattern="^(impact_score|talent_score|team_fit|pts|ast|trb|stl|blk)$"),
-        n: int = Query(20, ge=1, le=100),
-        db: Session = Depends(get_db)
+    season_id: int,
+    stat: str = Query("impact_score", pattern="^(impact_score|talent_score|team_fit|pts|ast|trb|stl|blk)$"),
+    n: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db)
 ):
     season = crud.get_season(db, season_id)
     if not season:
         raise HTTPException(status_code=404, detail="Season not found")
+
     from sqlalchemy import desc
     results = db.query(models.PlayerSeason).filter(
         models.PlayerSeason.season_id == season_id
     ).order_by(desc(getattr(models.PlayerSeason, stat))).limit(n).all()
+
     leaderboard = []
     for ps in results:
-        player = crud.get_player(db, ps.player_id)
         leaderboard.append({
             "player_id": ps.player_id,
-            "player_name": player.display_name if player else "Unknown",
+            "player_name": ps.player.display_name if ps.player else "Unknown",
             "season": season.year,
             stat: getattr(ps, stat)
         })
     return leaderboard
 
 
-# =========================================================================
-# PARAMETERIZED ROUTES – must come AFTER all static routes
-# =========================================================================
-
 @router.get("/", response_model=List[schemas.SeasonOut])
 def get_seasons(
-        skip: int = 0,
-        limit: int = 100,
-        db: Session = Depends(get_db)
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
 ):
     return crud.get_seasons(db, skip=skip, limit=limit)
 

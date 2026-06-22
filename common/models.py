@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, JSON, ForeignKey, Index
+from sqlalchemy.orm import relationship
 from .database import Base
 
 
@@ -102,6 +103,10 @@ class PlayerSeason(Base):
     # ----- JSON containers -----
     similar_seasons = Column(JSON)
     badges = Column(JSON)
+
+    # ----- Relationships -----
+    player = relationship("Player", lazy="joined")
+    season = relationship("Season", lazy="joined")
 
     __table_args__ = (
         Index('ix_player_seasons_player_season', 'player_id', 'season_id', unique=True),

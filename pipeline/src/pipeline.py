@@ -3,12 +3,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import warnings
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.config import PATHS, DATABASE_URL
 from src.data_loader import merge_all
 from src.features import build_feature_set
 from src.clustering import add_roles
@@ -18,6 +15,7 @@ from src.similarity import compute_similar_seasons
 from src.talent_model import train_talent_model, compute_talent_and_fit
 from common.database import Base, engine, SessionLocal
 from common.models import Player, Season, PlayerSeason
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 warnings.filterwarnings('ignore', category=pd.errors.PerformanceWarning)
 
@@ -78,14 +76,7 @@ def run_pipeline():
     df["team_fit"] = team_fit
 
     print("9. Writing to PostgreSQL database...")
-    engine = create_engine(DATABASE_URL)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    # Drop and recreate all tables to ensure the schema matches the current models
-    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
-    print("Database schema recreated.")
 
     # Use display name as primary player name
     if 'Player_display' in df.columns:
@@ -93,120 +84,134 @@ def run_pipeline():
     else:
         df['Player'] = df['Player']
 
+    # ---- Bulk insert players ----
+    player_names = df['Player'].unique()
+    player_records = [{'normalized_name': name, 'display_name': name} for name in player_names]
+    with SessionLocal() as session:
+        if player_records:
+            stmt = pg_insert(Player).values(player_records)
+            stmt = stmt.on_conflict_do_nothing(index_elements=['normalized_name'])
+            session.execute(stmt)
+        session.commit()
+
+    # ---- Bulk insert seasons ----
+    season_years = df['season'].unique()
+    season_records = [{'year': int(y)} for y in season_years]
+    with SessionLocal() as session:
+        if season_records:
+            stmt = pg_insert(Season).values(season_records)
+            stmt = stmt.on_conflict_do_nothing(index_elements=['year'])
+            session.execute(stmt)
+        session.commit()
+
+    # ---- Load ID mappings ----
+    with SessionLocal() as session:
+        players_in_db = {p.normalized_name: p.id for p in session.query(Player).all()}
+        seasons_in_db = {s.year: s.id for s in session.query(Season).all()}
+
+    # ---- Build PlayerSeason upsert records ----
+    badge_cols = [c for c in df.columns if '_badge' in c]
+    ps_records = []
     for _, row in df.iterrows():
-        # Player
-        player = session.query(Player).filter_by(normalized_name=row['Player']).first()
-        if not player:
-            player = Player(normalized_name=row['Player'], display_name=row['Player'])
-            session.add(player)
-            session.flush()
+        player_name = row['Player']
+        season_year = int(row['season'])
 
-        # Season
-        season = session.query(Season).filter_by(year=int(row['season'])).first()
-        if not season:
-            season = Season(year=int(row['season']))
-            session.add(season)
-            session.flush()
+        player_id = players_in_db[player_name]
+        season_id = seasons_in_db[season_year]
 
-        # Build badges JSON
-        badge_cols = [c for c in df.columns if '_badge' in c]
-        badges_dict = {col.replace('_badge', ''): row[col] for col in badge_cols if pd.notna(row[col])}
+        # Badges JSON
+        badges_dict = {}
+        for col in badge_cols:
+            if pd.notna(row[col]):
+                badges_dict[col.replace('_badge', '')] = row[col]
         badges_serializable = convert_to_serializable(badges_dict)
 
-        # Similar seasons conversion
+        # Similar seasons
         similar_raw = row.get('similar_seasons', [])
         similar_serializable = convert_to_serializable(similar_raw)
 
-        # PlayerSeason (upsert)
-        ps = session.query(PlayerSeason).filter_by(
-            player_id=player.id,
-            season_id=season.id
-        ).first()
-        if ps is None:
-            ps = PlayerSeason(player_id=player.id, season_id=season.id)
-            session.add(ps)
+        ps_record = {
+            'player_id': player_id,
+            'season_id': season_id,
+            'team': row.get('Team'),
+            'pos': row.get('Pos'),
+            'age': row.get('Age'),
+            'g': row.get('G'),
+            'gs': row.get('GS'),
+            'mp': row.get('MP'),
+            'fg_pct': row.get('FG%'),
+            'fg3_pct': row.get('3P%'),
+            'fg2_pct': row.get('2P%'),
+            'efg_pct': row.get('eFG%'),
+            'ts_pct': row.get('TS%'),
+            'ft_pct': row.get('FT%'),
+            'ftr': row.get('FTr'),
+            'three_par': row.get('3PAr'),
+            'at_rim_fga': row.get('AtRimFGA'),
+            'at_rim_accuracy': row.get('AtRimAccuracy'),
+            'short_mid_range_fga': row.get('ShortMidRangeFGA'),
+            'short_mid_range_accuracy': row.get('ShortMidRangeAccuracy'),
+            'long_mid_range_fga': row.get('LongMidRangeFGA'),
+            'long_mid_range_accuracy': row.get('LongMidRangeAccuracy'),
+            'corner3_fga': row.get('Corner3FGA'),
+            'corner3_accuracy': row.get('Corner3Accuracy'),
+            'arc3_fga': row.get('Arc3FGA'),
+            'arc3_accuracy': row.get('Arc3Accuracy'),
+            'orb_pct': row.get('ORB%'),
+            'drb_pct': row.get('DRB%'),
+            'trb_pct': row.get('TRB%'),
+            'ast_pct': row.get('AST%'),
+            'stl_pct': row.get('STL%'),
+            'blk_pct': row.get('BLK%'),
+            'tov_pct': row.get('TOV%'),
+            'usg_pct': row.get('USG%'),
+            'per': row.get('PER'),
+            'ws_per_48': row.get('WS/48'),
+            'ows': row.get('OWS'),
+            'dws': row.get('DWS'),
+            'bpm': row.get('BPM'),
+            'obpm': row.get('OBPM'),
+            'dbpm': row.get('DBPM'),
+            'vorp': row.get('VORP'),
+            'war': row.get('WAR'),
+            'lebron': row.get('LEBRON'),
+            'o_lebron': row.get('O-LEBRON'),
+            'd_lebron': row.get('D-LEBRON'),
+            'pos_estimate_pg': row.get('Position Estimate_PG%'),
+            'pos_estimate_sg': row.get('Position Estimate_SG%'),
+            'pos_estimate_sf': row.get('Position Estimate_SF%'),
+            'pos_estimate_pf': row.get('Position Estimate_PF%'),
+            'pos_estimate_c': row.get('Position Estimate_C%'),
+            'on_court_plus_minus': row.get('+/- Per 100 Poss_OnCourt'),
+            'on_off_plus_minus': row.get('+/- Per 100 Poss_On-Off'),
+            'on_off_rtg': row.get('OnOffRtg'),
+            'on_def_rtg': row.get('OnDefRtg'),
+            'impact_score': row.get('impact_score'),
+            'talent_score': row.get('talent_score'),
+            'team_fit': row.get('team_fit'),
+            'offensive_role': row.get('offensive_role'),
+            'offensive_fit': row.get('offensive_fit'),
+            'defensive_role': row.get('defensive_role'),
+            'defensive_fit': row.get('defensive_fit'),
+            'similar_seasons': similar_serializable,
+            'badges': badges_serializable,
+        }
+        ps_records.append(ps_record)
 
-        # Core info
-        ps.team = row.get('Team')
-        ps.pos = row.get('Pos')
-        ps.age = row.get('Age')
-        ps.g = row.get('G')
-        ps.gs = row.get('GS')
-        ps.mp = row.get('MP')
+    # ---- Bulk upsert PlayerSeason records ----
+    with SessionLocal() as session:
+        if ps_records:
+            stmt = pg_insert(PlayerSeason).values(ps_records)
+            # Update all columns on conflict (except the primary key id)
+            update_cols = {c.name: stmt.excluded[c.name] for c in PlayerSeason.__table__.columns if c.name != 'id'}
+            stmt = stmt.on_conflict_do_update(
+                index_elements=['player_id', 'season_id'],
+                set_=update_cols
+            )
+            session.execute(stmt)
+        session.commit()
 
-        # Shooting efficiency
-        ps.fg_pct = row.get('FG%')
-        ps.fg3_pct = row.get('3P%')
-        ps.fg2_pct = row.get('2P%')
-        ps.efg_pct = row.get('eFG%')
-        ps.ts_pct = row.get('TS%')
-        ps.ft_pct = row.get('FT%')
-        ps.ftr = row.get('FTr')
-        ps.three_par = row.get('3PAr')
-
-        # Zone shooting (volume & accuracy)
-        ps.at_rim_fga = row.get('AtRimFGA')
-        ps.at_rim_accuracy = row.get('AtRimAccuracy')
-        ps.short_mid_range_fga = row.get('ShortMidRangeFGA')
-        ps.short_mid_range_accuracy = row.get('ShortMidRangeAccuracy')
-        ps.long_mid_range_fga = row.get('LongMidRangeFGA')
-        ps.long_mid_range_accuracy = row.get('LongMidRangeAccuracy')
-        ps.corner3_fga = row.get('Corner3FGA')
-        ps.corner3_accuracy = row.get('Corner3Accuracy')
-        ps.arc3_fga = row.get('Arc3FGA')
-        ps.arc3_accuracy = row.get('Arc3Accuracy')
-
-        # Advanced percentages
-        ps.orb_pct = row.get('ORB%')
-        ps.drb_pct = row.get('DRB%')
-        ps.trb_pct = row.get('TRB%')
-        ps.ast_pct = row.get('AST%')
-        ps.stl_pct = row.get('STL%')
-        ps.blk_pct = row.get('BLK%')
-        ps.tov_pct = row.get('TOV%')
-        ps.usg_pct = row.get('USG%')
-
-        # Advanced impact metrics
-        ps.per = row.get('PER')
-        ps.ws_per_48 = row.get('WS/48')
-        ps.ows = row.get('OWS')
-        ps.dws = row.get('DWS')
-        ps.bpm = row.get('BPM')
-        ps.obpm = row.get('OBPM')
-        ps.dbpm = row.get('DBPM')
-        ps.vorp = row.get('VORP')
-        ps.war = row.get('WAR')
-        ps.lebron = row.get('LEBRON')
-        ps.o_lebron = row.get('O-LEBRON')
-        ps.d_lebron = row.get('D-LEBRON')
-
-        # Position estimates
-        ps.pos_estimate_pg = row.get('Position Estimate_PG%')
-        ps.pos_estimate_sg = row.get('Position Estimate_SG%')
-        ps.pos_estimate_sf = row.get('Position Estimate_SF%')
-        ps.pos_estimate_pf = row.get('Position Estimate_PF%')
-        ps.pos_estimate_c = row.get('Position Estimate_C%')
-
-        # On/Off
-        ps.on_court_plus_minus = row.get('+/- Per 100 Poss_OnCourt')
-        ps.on_off_plus_minus = row.get('+/- Per 100 Poss_On-Off')
-        ps.on_off_rtg = row.get('OnOffRtg')
-        ps.on_def_rtg = row.get('OnDefRtg')
-
-        # Our derived metrics
-        ps.impact_score = row.get('impact_score')
-        ps.talent_score = row.get('talent_score')
-        ps.team_fit = row.get('team_fit')
-        ps.offensive_role = row.get('offensive_role')
-        ps.offensive_fit = row.get('offensive_fit')
-        ps.defensive_role = row.get('defensive_role')
-        ps.defensive_fit = row.get('defensive_fit')
-        ps.similar_seasons = similar_serializable
-        ps.badges = badges_serializable
-
-    session.commit()
-    session.close()
-    print("Database write complete.")
+    print("Database write complete (bulk).")
 
 if __name__ == "__main__":
     run_pipeline()
