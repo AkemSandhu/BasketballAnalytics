@@ -14,36 +14,60 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+*.egg
+MANIFEST
 
-# Database
+# Database (SQLite, PostgreSQL data)
 *.db
 *.sqlite
 *.sqlite3
 postgres_data/
 
-# IDE
+# IDE / Editor
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
+*.iml
 
 # Logs
 *.log
 logs/
 
-# Outputs
+# Outputs from pipeline (CSV, SQLite, mapping files, unmatched logs)
 data/outputs/*.csv
 data/processed/*.sqlite
 data/processed/*.txt
 data/processed/name_mapping.csv
+data/raw/ (but keep structure)
+!data/raw/.gitkeep
 
 # Node (frontend)
 frontend/node_modules/
 frontend/dist/
 frontend/.env.local
+frontend/.env.production
+frontend/.env.development
 
 # Backend
 backend/__pycache__/
 backend/.env
+backend/.venv
+
+# Pipeline
+pipeline/__pycache__/
+pipeline/.env
+pipeline/.venv
+pipeline/data/processed/
+pipeline/data/outputs/
+
+# Docker
+*.pid
+docker-compose.override.yml
+.dockerignore
+
+# OS
+Thumbs.db
+desktop.ini
